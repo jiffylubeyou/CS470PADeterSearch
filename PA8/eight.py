@@ -115,9 +115,7 @@ class Puzzle():
         """
         ######## TASK 1.1 BEGIN ##########
         
-        #Add code to determine whether this puzzle is solved
-        
-        return False #Change this!
+        return self.state == [0,1,2,3,4,5,6,7,8]
 
         ######## TASK 1.1 END   ##########
 
@@ -159,15 +157,15 @@ class SearchNode():
 
         if self.options.type == 'g':
             #greedy search algorithm
-            self.f_value = 0 # Change this to implement greedy!
+            self.f_value = heuristic(self, self.options) # Change this to implement greedy!
 
         elif self.options.type == 'u':
             #uniform cost search algorithm
-            self.f_value = 0 # Change this to implement uniform cost search!
+            self.f_value = self.cost # Change this to implement uniform cost search!
 
         elif self.options.type == 'a':
             #A* search algorithm
-            self.f_value = 0 # Change this to implement A*!
+            self.f_value = self.cost + heuristic(self, self.options) # Change this to implement A*!
 
         else:
             print('Invalid search type (-t) selected: Valid options are g, u, and a')
@@ -226,10 +224,16 @@ def tiles_out_of_row_column(puzzle):
     Remember not to count the blank tile as being out of place, or the heuristic is inadmissible
     """
     ######## TASK 1.4.1 BEGIN   ##########
+    numcolumns = 0
+    numrows = 0
+    for i in range(1, len(self.state)):
+            if (get_tile_row(self.state[i]) != get_tile_row(i)):
+               numrows = numrows + 1
+            if (get_tile_column(self.state[i]) != get_tile_column(i)):
+                numcolumns = numcolumns + 1
 
-    # YOUR TASK 1.4.1 CODE HERE
     
-    return 0 #change this
+    return numrows + numcolumns
     
     ######## TASK 1.4.1 END   ##########
 
@@ -241,9 +245,12 @@ def manhattan_distance_to_goal(puzzle):
     
     ######## TASK 1.4.2 BEGIN   #########
 
-    # YOUR TASK 1.4.2 CODE HERE
-    
-    return 0 #change this!
+    numcolumns = 0
+    numrows = 0
+    for i in range(1, len(self.state)):
+        numrows = numrows + abs(get_tile_row(self.state[i]) - get_tile_row(i))
+        numcolumns = numcolumns + abs(get_tile_column(self.state[i]) - get_tile_column(i))
+    return numrows + numcolumns
     
     ######## TASK 1.4.2 END   ##########  
 
@@ -267,6 +274,7 @@ def run_iterative_search(start_node):
     """
     #Our initial depth limit
     depth_limit = 1
+    fValue_limit = 0
     
     #Maximum depth limit
     max_depth_limit = 40
@@ -275,7 +283,8 @@ def run_iterative_search(start_node):
     total_expanded = 0
     
     #Keep trying until our depth limit hits 40
-    while depth_limit < max_depth_limit:
+    # while depth_limit < max_depth_limit:
+    while True: # CHANGE THIS FOR PART 2
         
         #Store visited nodes along the current search path
         visited = dict()
@@ -285,8 +294,9 @@ def run_iterative_search(start_node):
         visited[start_node.puzzle.id()] = True
         
         #Run depth-limited search starting at initial node (which points to initial state)
-        path_length = run_dfs(start_node, depth_limit, visited) 
-    
+        # path_length = run_dfs(start_node, depth_limit, visited)
+        path_length = run_dfs(start_node, fValue_limit, visited)
+
         #See how many nodes we expanded on this iteration and add it to our total
         total_expanded += visited['N']
         
@@ -299,6 +309,8 @@ def run_iterative_search(start_node):
             
         # No solution was found at this depth limit, so increment our depth-limit    
         depth_limit += 1
+        fValue_limit = fValue_limit + 1
+
         
     # No solution was found at any depth-limit, so return None,None (Which signifies no solution found)
     return None, None
@@ -319,7 +331,8 @@ def run_dfs(node, depth_limit, visited):
         return len(node.path)
         
     # Check to see if the depth limit has been reached (number of actions that have been taken)
-    if len(node.path) >= depth_limit:
+    # if len(node.path) >= depth_limit:
+    if node.f_value >= depth_limit: # PART 2
         # It has. Return None, signifying that no path was found
         return None
     
@@ -345,7 +358,8 @@ def run_dfs(node, depth_limit, visited):
             visited[node.puzzle.id()] = True
             
             #Recurse on this new state
-            path_length = run_dfs(node, depth_limit, visited)    
+            path_length = run_dfs(node, depth_limit, visited)
+
             
             #Check to see if a solution was found down this path (return value of None means no)
             if path_length is not None:
